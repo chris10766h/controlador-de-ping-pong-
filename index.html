@@ -1,484 +1,521 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏓 Ping Pong Score Tracker</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏓 Ping Pong Score Tracker</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<header>
-  <h1>🏓 Ping Pong Tracker</h1>
-  <p>Sistema de puntuación y cola de jugadores</p>
-</header>
+  <header>
+    <h1>🏓 Ping Pong Tracker</h1>
+    <p>Sistema de puntuación y cola de jugadores</p>
+  </header>
 
-<div class="container">
+  <div class="container">
 
-  <!-- MODE & SETS -->
-  <div class="mode-bar">
-    <button class="mode-btn active" id="modeSimples" onclick="setMode('simples')">Simples (1 vs 1)</button>
-    <button class="mode-btn" id="modeDuplas" onclick="setMode('duplas')">Duplas (2 vs 2)</button>
-  </div>
+    <!-- MODE & SETS -->
+    <div class="mode-bar">
+      <button class="mode-btn active" id="modeSimples" onclick="setMode('simples')">Simples (1 vs 1)</button>
+      <button class="mode-btn" id="modeDuplas" onclick="setMode('duplas')">Duplas (2 vs 2)</button>
+    </div>
 
-  <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:20px;">
-    <div class="sets-bar" style="margin-bottom:0;">
-      <label>Sets a jugar:</label>
-      <div class="sets-btns">
-        <button class="set-btn" id="sb1" onclick="setMaxSets(1)">1</button>
-        <button class="set-btn active" id="sb3" onclick="setMaxSets(3)">3</button>
-        <button class="set-btn" id="sb5" onclick="setMaxSets(5)">5</button>
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:20px;">
+      <div class="sets-bar" style="margin-bottom:0;">
+        <label>Sets a jugar:</label>
+        <div class="sets-btns">
+          <button class="set-btn" id="sb1" onclick="setMaxSets(1)">1</button>
+          <button class="set-btn active" id="sb3" onclick="setMaxSets(3)">3</button>
+          <button class="set-btn" id="sb5" onclick="setMaxSets(5)">5</button>
+        </div>
+      </div>
+      <div class="sets-bar" style="margin-bottom:0;">
+        <label>Puntos por set:</label>
+        <input id="ptsInput" type="number" min="1" value="11" class="pts-input" oninput="setPointsPerSet(this.value)"
+          title="Puntos necesarios para ganar un set">
+      </div>
+      <div style="flex:1;"></div>
+      <button class="reset-btn" onclick="confirmReset()">↺ Reiniciar todo</button>
+    </div>
+
+    <!-- SCOREBOARD -->
+    <div class="game-status">
+      <div class="info" id="gameInfoText">Primero en ganar <strong id="setsNeeded">2</strong> sets gana el partido</div>
+      <div class="current-set" id="currentSetLabel">SET 1</div>
+    </div>
+
+    <div class="scoreboard" id="scoreboard">
+      <!-- LEFT CARD -->
+      <div class="player-card left" id="cardLeft">
+        <div class="team-label" id="labelLeft">JUGADOR 1</div>
+        <div class="player-names" id="namesLeft">
+          <span class="name-badge" id="name1A">—</span>
+          <span class="name-badge" id="name1B" style="display:none"></span>
+        </div>
+        <div class="score-display" id="scoreLeft">0</div>
+        <div style="margin-bottom:10px; display:flex; gap:4px; justify-content:center;" id="setsLeftPips"></div>
+        <button class="point-btn" id="btnLeft" onclick="addPoint('left')">+ PUNTO</button>
+      </div>
+
+      <!-- MIDDLE -->
+      <div class="middle">
+        <div class="vs-badge">VS</div>
+        <div class="status-pill playing" id="matchStatus">JUGANDO</div>
+        <button class="undo-btn" onclick="undoPoint()" title="Deshacer último punto">↩</button>
+      </div>
+
+      <!-- RIGHT CARD -->
+      <div class="player-card right" id="cardRight">
+        <div class="team-label" id="labelRight">JUGADOR 2</div>
+        <div class="player-names" id="namesRight">
+          <span class="name-badge" id="name2A">—</span>
+          <span class="name-badge" id="name2B" style="display:none"></span>
+        </div>
+        <div class="score-display" id="scoreRight">0</div>
+        <div style="margin-bottom:10px; display:flex; gap:4px; justify-content:center;" id="setsRightPips"></div>
+        <button class="point-btn" id="btnRight" onclick="addPoint('right')">+ PUNTO</button>
       </div>
     </div>
-    <div style="flex:1;"></div>
-    <button class="reset-btn" onclick="confirmReset()">↺ Reiniciar todo</button>
-  </div>
 
-  <!-- SCOREBOARD -->
-  <div class="game-status">
-    <div class="info" id="gameInfoText">Primero en ganar <strong id="setsNeeded">2</strong> sets gana el partido</div>
-    <div class="current-set" id="currentSetLabel">SET 1</div>
-  </div>
-
-  <div class="scoreboard" id="scoreboard">
-    <!-- LEFT CARD -->
-    <div class="player-card left" id="cardLeft">
-      <div class="team-label" id="labelLeft">JUGADOR 1</div>
-      <div class="player-names" id="namesLeft">
-        <span class="name-badge" id="name1A">—</span>
-        <span class="name-badge" id="name1B" style="display:none"></span>
+    <!-- QUEUE -->
+    <div class="queue-section">
+      <div class="section-title">Cola de jugadores</div>
+      <div class="queue-list" id="queueList">
+        <div class="empty-state">
+          <div class="icon">👥</div>
+          <div>Agrega jugadores para comenzar</div>
+        </div>
       </div>
-      <div class="score-display" id="scoreLeft">0</div>
-      <div style="margin-bottom:10px; display:flex; gap:4px; justify-content:center;" id="setsLeftPips"></div>
-      <button class="point-btn" id="btnLeft" onclick="addPoint('left')">+ PUNTO</button>
     </div>
 
-    <!-- MIDDLE -->
-    <div class="middle">
-      <div class="vs-badge">VS</div>
-      <div class="status-pill playing" id="matchStatus">JUGANDO</div>
-      <button class="undo-btn" onclick="undoPoint()" title="Deshacer último punto">↩</button>
-    </div>
-
-    <!-- RIGHT CARD -->
-    <div class="player-card right" id="cardRight">
-      <div class="team-label" id="labelRight">JUGADOR 2</div>
-      <div class="player-names" id="namesRight">
-        <span class="name-badge" id="name2A">—</span>
-        <span class="name-badge" id="name2B" style="display:none"></span>
+    <!-- ADD PLAYER -->
+    <div class="add-section">
+      <div class="section-title">Agregar jugador</div>
+      <div class="add-form" id="addForm">
+        <input class="player-input" id="inputName" placeholder="Nombre del jugador" maxlength="20"
+          onkeydown="if(event.key==='Enter')addPlayer()">
+        <button class="add-btn" onclick="addPlayer()">＋ Agregar</button>
       </div>
-      <div class="score-display" id="scoreRight">0</div>
-      <div style="margin-bottom:10px; display:flex; gap:4px; justify-content:center;" id="setsRightPips"></div>
-      <button class="point-btn" id="btnRight" onclick="addPoint('right')">+ PUNTO</button>
+      <div id="dupFormHint" style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;display:none;">
+        💡 En modo duplas, los jugadores se emparejan automáticamente de 2 en 2
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="history-section">
+      <div class="section-title">Historial de partidos</div>
+      <div class="history-list" id="historyList">
+        <div class="empty-state">
+          <div style="font-size:1.5rem;margin-bottom:6px;">📋</div>
+          <div>Sin partidos aún</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- WINNER MODAL -->
+  <div class="overlay" id="winnerOverlay">
+    <div class="winner-modal">
+      <div class="trophy">🏆</div>
+      <h2>¡GANADOR!</h2>
+      <div class="winner-name" id="winnerName"></div>
+      <div class="score-line" id="winnerScore"></div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="nextMatch()">▶ Siguiente partido</button>
+        <button class="btn-secondary" onclick="closeModal()">✕ Cerrar</button>
+      </div>
     </div>
   </div>
 
-  <!-- QUEUE -->
-  <div class="queue-section">
-    <div class="section-title">Cola de jugadores</div>
-    <div class="queue-list" id="queueList">
-      <div class="empty-state"><div class="icon">👥</div><div>Agrega jugadores para comenzar</div></div>
-    </div>
-  </div>
+  <script>
+    // ==================== STATE ====================
+    let mode = 'simples'; // 'simples' | 'duplas'
+    let maxSets = 3;
+    let setsNeeded = 2; // Math.ceil(maxSets/2)
+    let pointsPerSet = 11; // configurable — any positive integer
 
-  <!-- ADD PLAYER -->
-  <div class="add-section">
-    <div class="section-title">Agregar jugador</div>
-    <div class="add-form" id="addForm">
-      <input class="player-input" id="inputName" placeholder="Nombre del jugador" maxlength="20" onkeydown="if(event.key==='Enter')addPlayer()">
-      <button class="add-btn" onclick="addPlayer()">＋ Agregar</button>
-    </div>
-    <div id="dupFormHint" style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;display:none;">
-      💡 En modo duplas, los jugadores se emparejan automáticamente de 2 en 2
-    </div>
-  </div>
+    let queue = []; // [{name}]
+    let currentLeft = null;  // {names:[]} for simples: 1 name, duplas: 2 names
+    let currentRight = null;
 
-  <!-- HISTORY -->
-  <div class="history-section">
-    <div class="section-title">Historial de partidos</div>
-    <div class="history-list" id="historyList">
-      <div class="empty-state"><div style="font-size:1.5rem;margin-bottom:6px;">📋</div><div>Sin partidos aún</div></div>
-    </div>
-  </div>
+    let scoreLeft = 0;
+    let scoreRight = 0;
+    let setsLeft = 0;
+    let setsRight = 0;
+    let currentSet = 1;
 
-</div>
+    let history = []; // match results
 
-<!-- WINNER MODAL -->
-<div class="overlay" id="winnerOverlay">
-  <div class="winner-modal">
-    <div class="trophy">🏆</div>
-    <h2>¡GANADOR!</h2>
-    <div class="winner-name" id="winnerName"></div>
-    <div class="score-line" id="winnerScore"></div>
-    <div class="modal-actions">
-      <button class="btn-primary" onclick="nextMatch()">▶ Siguiente partido</button>
-      <button class="btn-secondary" onclick="closeModal()">✕ Cerrar</button>
-    </div>
-  </div>
-</div>
+    let lastPoints = []; // for undo: {side, scoreL, scoreR}
 
-<script>
-// ==================== STATE ====================
-let mode = 'simples'; // 'simples' | 'duplas'
-let maxSets = 3;
-let setsNeeded = 2; // Math.ceil(maxSets/2)
+    // ==================== INIT ====================
+    window.onload = () => {
+      // Demo players
+      let demo = ['Julio', 'Carlos', 'Ana', 'Pedro'];
+      demo.forEach(n => queue.push({ name: n }));
+      tryStartMatch();
+      renderAll();
+    };
 
-let queue = []; // [{name}]
-let currentLeft = null;  // {names:[]} for simples: 1 name, duplas: 2 names
-let currentRight = null;
+    // ==================== MODE & SETS ====================
+    function setMode(m) {
+      mode = m;
+      document.getElementById('modeSimples').classList.toggle('active', m === 'simples');
+      document.getElementById('modeDuplas').classList.toggle('active', m === 'duplas');
+      document.getElementById('dupFormHint').style.display = m === 'duplas' ? 'block' : 'none';
+      document.getElementById('labelLeft').textContent = m === 'duplas' ? 'EQUIPO 1' : 'JUGADOR 1';
+      document.getElementById('labelRight').textContent = m === 'duplas' ? 'EQUIPO 2' : 'JUGADOR 2';
 
-let scoreLeft = 0;
-let scoreRight = 0;
-let setsLeft = 0;
-let setsRight = 0;
-let currentSet = 1;
+      // Reset match with current queue
+      resetCurrentMatch();
+      tryStartMatch();
+      renderAll();
+    }
 
-let history = []; // match results
+    function setMaxSets(n) {
+      maxSets = n;
+      setsNeeded = Math.ceil(n / 2);
+      [1, 3, 5].forEach(v => {
+        let btn = document.getElementById('sb' + v);
+        if (btn) btn.classList.toggle('active', v === n);
+      });
+      resetCurrentMatch();
+      renderAll();
+    }
 
-let lastPoints = []; // for undo: {side, scoreL, scoreR}
+    function setPointsPerSet(val) {
+      let n = parseInt(val, 10);
+      if (!n || n < 1) return; // ignore invalid
+      pointsPerSet = n;
+      resetCurrentMatch();
+      renderAll();
+    }
 
-// ==================== INIT ====================
-window.onload = () => {
-  // Demo players
-  let demo = ['Julio','Carlos','Ana','Pedro'];
-  demo.forEach(n => queue.push({name: n}));
-  tryStartMatch();
-  renderAll();
-};
+    // ==================== QUEUE & MATCH ====================
+    function playersNeeded() { return mode === 'duplas' ? 4 : 2; }
+    function teamSize() { return mode === 'duplas' ? 2 : 1; }
 
-// ==================== MODE & SETS ====================
-function setMode(m) {
-  mode = m;
-  document.getElementById('modeSimples').classList.toggle('active', m==='simples');
-  document.getElementById('modeDuplas').classList.toggle('active', m==='duplas');
-  document.getElementById('dupFormHint').style.display = m==='duplas' ? 'block' : 'none';
-  document.getElementById('labelLeft').textContent = m==='duplas' ? 'EQUIPO 1' : 'JUGADOR 1';
-  document.getElementById('labelRight').textContent = m==='duplas' ? 'EQUIPO 2' : 'JUGADOR 2';
+    function tryStartMatch() {
+      const needed = playersNeeded();
+      if (queue.length >= needed && (currentLeft === null || currentRight === null)) {
+        let ts = teamSize();
+        // Take from queue
+        let left = queue.splice(0, ts).map(p => p.name);
+        let right = queue.splice(0, ts).map(p => p.name);
+        currentLeft = { names: left };
+        currentRight = { names: right };
+        scoreLeft = 0;
+        scoreRight = 0;
+        setsLeft = 0;
+        setsRight = 0;
+        currentSet = 1;
+        lastPoints = [];
+      }
+    }
 
-  // Reset match with current queue
-  resetCurrentMatch();
-  tryStartMatch();
-  renderAll();
-}
+    function resetCurrentMatch() {
+      if (currentLeft) queue.unshift(...currentLeft.names.map(n => ({ name: n })));
+      if (currentRight) queue.unshift(...currentRight.names.map(n => ({ name: n })));
+      currentLeft = null;
+      currentRight = null;
+      scoreLeft = 0;
+      scoreRight = 0;
+      setsLeft = 0;
+      setsRight = 0;
+      currentSet = 1;
+      lastPoints = [];
+    }
 
-function setMaxSets(n) {
-  maxSets = n;
-  setsNeeded = Math.ceil(n / 2);
-  [1,3,5].forEach(v => {
-    let btn = document.getElementById('sb'+v);
-    if(btn) btn.classList.toggle('active', v===n);
-  });
-  resetCurrentMatch();
-  renderAll();
-}
+    // ==================== SCORING ====================
+    function addPoint(side) {
+      if (!currentLeft || !currentRight) return;
 
-// ==================== QUEUE & MATCH ====================
-function playersNeeded() { return mode === 'duplas' ? 4 : 2; }
-function teamSize() { return mode === 'duplas' ? 2 : 1; }
+      // Save state for undo
+      lastPoints.push({ side, sl: scoreLeft, sr: scoreRight });
+      if (lastPoints.length > 20) lastPoints.shift();
 
-function tryStartMatch() {
-  const needed = playersNeeded();
-  if (queue.length >= needed && (currentLeft === null || currentRight === null)) {
-    let ts = teamSize();
-    // Take from queue
-    let left = queue.splice(0, ts).map(p => p.name);
-    let right = queue.splice(0, ts).map(p => p.name);
-    currentLeft = { names: left };
-    currentRight = { names: right };
-    scoreLeft = 0;
-    scoreRight = 0;
-    setsLeft = 0;
-    setsRight = 0;
-    currentSet = 1;
-    lastPoints = [];
-  }
-}
+      if (side === 'left') scoreLeft++;
+      else scoreRight++;
 
-function resetCurrentMatch() {
-  if (currentLeft) queue.unshift(...currentLeft.names.map(n => ({name:n})));
-  if (currentRight) queue.unshift(...currentRight.names.map(n => ({name:n})));
-  currentLeft = null;
-  currentRight = null;
-  scoreLeft = 0;
-  scoreRight = 0;
-  setsLeft = 0;
-  setsRight = 0;
-  currentSet = 1;
-  lastPoints = [];
-}
+      animateScore(side);
+      checkSetWin();
+      renderAll();
+    }
 
-// ==================== SCORING ====================
-function addPoint(side) {
-  if (!currentLeft || !currentRight) return;
+    function undoPoint() {
+      if (!lastPoints.length) return;
+      let prev = lastPoints.pop();
+      scoreLeft = prev.sl;
+      scoreRight = prev.sr;
+      renderAll();
+    }
 
-  // Save state for undo
-  lastPoints.push({side, sl: scoreLeft, sr: scoreRight});
-  if (lastPoints.length > 20) lastPoints.shift();
+    function checkSetWin() {
+      // A player wins the set when they reach pointsPerSet AND lead by 2
+      const minPoints = pointsPerSet;
+      const diff = 2;
 
-  if (side === 'left') scoreLeft++;
-  else scoreRight++;
+      let leftWins = scoreLeft >= minPoints && (scoreLeft - scoreRight) >= diff;
+      let rightWins = scoreRight >= minPoints && (scoreRight - scoreLeft) >= diff;
 
-  animateScore(side);
-  checkSetWin();
-  renderAll();
-}
+      if (!leftWins && !rightWins) {
+        // No winner yet — just update the deuce/playing pill
+        updateStatusPill();
+        return;
+      }
 
-function undoPoint() {
-  if (!lastPoints.length) return;
-  let prev = lastPoints.pop();
-  scoreLeft = prev.sl;
-  scoreRight = prev.sr;
-  renderAll();
-}
+      // Someone won this set: clear deuce glow immediately
+      clearDeuceGlow();
 
-function checkSetWin() {
-  const minPoints = 11;
-  const diff = 2;
+      if (leftWins) {
+        setsLeft++;
+      } else {
+        setsRight++;
+      }
 
-  let leftWins = scoreLeft >= minPoints && (scoreLeft - scoreRight) >= diff;
-  let rightWins = scoreRight >= minPoints && (scoreRight - scoreLeft) >= diff;
+      if (setsLeft >= setsNeeded || setsRight >= setsNeeded) {
+        // Match winner
+        setTimeout(() => showWinner(setsLeft > setsRight ? 'left' : 'right'), 200);
+      } else {
+        // Won the set but not the match — start next set
+        currentSet++;
+        scoreLeft = 0;
+        scoreRight = 0;
+        lastPoints = [];
+      }
+    }
 
-  if (!leftWins && !rightWins) {
-    updateStatusPill();
-    return;
-  }
+    function updateStatusPill() {
+      let el = document.getElementById('matchStatus');
+      // Deuce = both players reached the points limit (official rule)
+      let isDeuce = scoreLeft >= pointsPerSet && scoreRight >= pointsPerSet;
+      el.textContent = isDeuce ? 'DEUCE' : 'JUGANDO';
+      el.className = 'status-pill ' + (isDeuce ? 'deuce' : 'playing');
+      document.getElementById('cardLeft').classList.toggle('deuce-glow', isDeuce);
+      document.getElementById('cardRight').classList.toggle('deuce-glow', isDeuce);
+    }
 
-  if (leftWins) {
-    setsLeft++;
-  } else {
-    setsRight++;
-  }
+    function clearDeuceGlow() {
+      let el = document.getElementById('matchStatus');
+      el.textContent = 'JUGANDO';
+      el.className = 'status-pill playing';
+      document.getElementById('cardLeft').classList.remove('deuce-glow');
+      document.getElementById('cardRight').classList.remove('deuce-glow');
+    }
 
-  if (setsLeft >= setsNeeded || setsRight >= setsNeeded) {
-    // Match winner
-    setTimeout(() => showWinner(setsLeft > setsRight ? 'left' : 'right'), 200);
-  } else {
-    // Next set
-    currentSet++;
-    scoreLeft = 0;
-    scoreRight = 0;
-    lastPoints = [];
-    // Detect deuce-like
-  }
-}
+    function showWinner(side) {
+      let winner = side === 'left' ? currentLeft : currentRight;
+      let loser = side === 'left' ? currentRight : currentLeft;
+      let wScore = side === 'left' ? setsLeft : setsRight;
+      let lScore = side === 'left' ? setsRight : setsLeft;
 
-function updateStatusPill() {
-  let el = document.getElementById('matchStatus');
-  let isDeuce = scoreLeft >= 10 && scoreRight >= 10;
-  el.textContent = isDeuce ? 'DEUCE' : 'JUGANDO';
-  el.className = 'status-pill ' + (isDeuce ? 'deuce' : 'playing');
-  document.getElementById('cardLeft').classList.toggle('deuce-glow', isDeuce);
-  document.getElementById('cardRight').classList.toggle('deuce-glow', isDeuce);
-}
+      // Save history
+      history.unshift({
+        winner: winner.names.join(' & '),
+        loser: loser.names.join(' & '),
+        score: wScore + '-' + lScore,
+        sets: maxSets,
+        mode
+      });
 
-function showWinner(side) {
-  let winner = side === 'left' ? currentLeft : currentRight;
-  let loser = side === 'left' ? currentRight : currentLeft;
-  let wScore = side === 'left' ? setsLeft : setsRight;
-  let lScore = side === 'left' ? setsRight : setsLeft;
+      document.getElementById('winnerName').textContent = winner.names.join(' & ');
+      document.getElementById('winnerScore').textContent =
+        `Ganó ${wScore}-${lScore} en sets (${mode === 'duplas' ? 'Duplas' : 'Simples'}, al mejor de ${maxSets})`;
 
-  // Save history
-  history.unshift({
-    winner: winner.names.join(' & '),
-    loser: loser.names.join(' & '),
-    score: wScore + '-' + lScore,
-    sets: maxSets,
-    mode
-  });
+      document.getElementById('winnerOverlay').classList.add('show');
 
-  document.getElementById('winnerName').textContent = winner.names.join(' & ');
-  document.getElementById('winnerScore').textContent =
-    `Ganó ${wScore}-${lScore} en sets (${mode === 'duplas' ? 'Duplas' : 'Simples'}, al mejor de ${maxSets})`;
+      // Winner stays, loser goes to end of queue
+      loser.names.forEach(n => queue.push({ name: n }));
 
-  document.getElementById('winnerOverlay').classList.add('show');
+      // Winner re-enters as currentLeft or Right after modal
+      window._pendingWinner = winner;
+      window._pendingLoser = loser;
+      window._winningSide = side;
 
-  // Winner stays, loser goes to end of queue
-  loser.names.forEach(n => queue.push({name: n}));
+      renderHistory();
+    }
 
-  // Winner re-enters as currentLeft or Right after modal
-  window._pendingWinner = winner;
-  window._pendingLoser = loser;
-  window._winningSide = side;
+    function nextMatch() {
+      closeModal();
+      // Winner becomes new left/right, opponent from queue comes in
+      let winner = window._pendingWinner;
+      let ts = teamSize();
 
-  renderHistory();
-}
+      if (queue.length >= ts) {
+        let newTeam = queue.splice(0, ts).map(p => p.name);
+        currentLeft = winner;
+        currentRight = { names: newTeam };
+      } else {
+        currentLeft = null;
+        currentRight = null;
+      }
 
-function nextMatch() {
-  closeModal();
-  // Winner becomes new left/right, opponent from queue comes in
-  let winner = window._pendingWinner;
-  let ts = teamSize();
+      scoreLeft = 0;
+      scoreRight = 0;
+      setsLeft = 0;
+      setsRight = 0;
+      currentSet = 1;
+      lastPoints = [];
 
-  if (queue.length >= ts) {
-    let newTeam = queue.splice(0, ts).map(p => p.name);
-    currentLeft = winner;
-    currentRight = { names: newTeam };
-  } else {
-    currentLeft = null;
-    currentRight = null;
-  }
+      if (!currentLeft && !currentRight) tryStartMatch();
 
-  scoreLeft = 0;
-  scoreRight = 0;
-  setsLeft = 0;
-  setsRight = 0;
-  currentSet = 1;
-  lastPoints = [];
+      renderAll();
+    }
 
-  if (!currentLeft && !currentRight) tryStartMatch();
+    function closeModal() {
+      document.getElementById('winnerOverlay').classList.remove('show');
+    }
 
-  renderAll();
-}
+    // ==================== PLAYERS ====================
+    function addPlayer() {
+      let input = document.getElementById('inputName');
+      let name = (input.value || '').trim();
+      if (!name) { input.focus(); return; }
 
-function closeModal() {
-  document.getElementById('winnerOverlay').classList.remove('show');
-}
+      queue.push({ name });
+      input.value = '';
+      input.focus();
 
-// ==================== PLAYERS ====================
-function addPlayer() {
-  let input = document.getElementById('inputName');
-  let name = (input.value || '').trim();
-  if (!name) { input.focus(); return; }
+      if (!currentLeft || !currentRight) tryStartMatch();
 
-  queue.push({ name });
-  input.value = '';
-  input.focus();
+      renderAll();
+    }
 
-  if (!currentLeft || !currentRight) tryStartMatch();
+    function removeFromQueue(idx) {
+      queue.splice(idx, 1);
+      renderAll();
+    }
 
-  renderAll();
-}
+    // ==================== RENDER ====================
+    function renderAll() {
+      renderScoreboard();
+      renderQueue();
+      renderHistory();
+      updateStatusPill();
+      renderSetsPips();
+      updateGameInfo();
+    }
 
-function removeFromQueue(idx) {
-  queue.splice(idx, 1);
-  renderAll();
-}
+    function renderScoreboard() {
+      let hasMatch = currentLeft && currentRight;
 
-// ==================== RENDER ====================
-function renderAll() {
-  renderScoreboard();
-  renderQueue();
-  renderHistory();
-  updateStatusPill();
-  renderSetsPips();
-  updateGameInfo();
-}
+      // Names
+      let [n1a, n1b] = (currentLeft?.names || ['—', '']);
+      let [n2a, n2b] = (currentRight?.names || ['—', '']);
+      document.getElementById('name1A').textContent = n1a || '—';
+      document.getElementById('name1B').textContent = n1b || '';
+      document.getElementById('name1B').style.display = (n1b && mode === 'duplas') ? 'inline-block' : 'none';
+      document.getElementById('name2A').textContent = n2a || '—';
+      document.getElementById('name2B').textContent = n2b || '';
+      document.getElementById('name2B').style.display = (n2b && mode === 'duplas') ? 'inline-block' : 'none';
 
-function renderScoreboard() {
-  let hasMatch = currentLeft && currentRight;
+      // Scores
+      document.getElementById('scoreLeft').textContent = scoreLeft;
+      document.getElementById('scoreRight').textContent = scoreRight;
 
-  // Names
-  let [n1a, n1b] = (currentLeft?.names || ['—','']);
-  let [n2a, n2b] = (currentRight?.names || ['—','']);
-  document.getElementById('name1A').textContent = n1a || '—';
-  document.getElementById('name1B').textContent = n1b || '';
-  document.getElementById('name1B').style.display = (n1b && mode==='duplas') ? 'inline-block' : 'none';
-  document.getElementById('name2A').textContent = n2a || '—';
-  document.getElementById('name2B').textContent = n2b || '';
-  document.getElementById('name2B').style.display = (n2b && mode==='duplas') ? 'inline-block' : 'none';
+      // Disable buttons if no match
+      document.getElementById('btnLeft').disabled = !hasMatch;
+      document.getElementById('btnRight').disabled = !hasMatch;
 
-  // Scores
-  document.getElementById('scoreLeft').textContent = scoreLeft;
-  document.getElementById('scoreRight').textContent = scoreRight;
+      // Current set
+      document.getElementById('currentSetLabel').textContent = 'SET ' + currentSet;
+    }
 
-  // Disable buttons if no match
-  document.getElementById('btnLeft').disabled = !hasMatch;
-  document.getElementById('btnRight').disabled = !hasMatch;
+    function renderSetsPips() {
+      renderPips('setsLeftPips', setsLeft, setsRight);
+      renderPips('setsRightPips', setsRight, setsLeft);
+    }
 
-  // Current set
-  document.getElementById('currentSetLabel').textContent = 'SET ' + currentSet;
-}
+    function renderPips(containerId, wonByMe, wonByOpp) {
+      let el = document.getElementById(containerId);
+      el.innerHTML = '';
+      for (let i = 0; i < setsNeeded; i++) {
+        let pip = document.createElement('div');
+        pip.className = 'set-pip';
+        if (containerId === 'setsLeftPips' && i < wonByMe) pip.classList.add('left');
+        else if (containerId === 'setsRightPips' && i < wonByMe) pip.classList.add('right');
+        el.appendChild(pip);
+      }
+    }
 
-function renderSetsPips() {
-  renderPips('setsLeftPips', setsLeft, setsRight);
-  renderPips('setsRightPips', setsRight, setsLeft);
-}
-
-function renderPips(containerId, wonByMe, wonByOpp) {
-  let el = document.getElementById(containerId);
-  el.innerHTML = '';
-  for (let i = 0; i < setsNeeded; i++) {
-    let pip = document.createElement('div');
-    pip.className = 'set-pip';
-    if (containerId === 'setsLeftPips' && i < wonByMe) pip.classList.add('left');
-    else if (containerId === 'setsRightPips' && i < wonByMe) pip.classList.add('right');
-    el.appendChild(pip);
-  }
-}
-
-function renderQueue() {
-  let el = document.getElementById('queueList');
-  if (!queue.length) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">👥</div><div>Cola vacía — agrega jugadores</div></div>';
-    return;
-  }
-  el.innerHTML = '';
-  queue.forEach((p, i) => {
-    let div = document.createElement('div');
-    div.className = 'queue-item slide-in';
-    let badge = i < teamSize() ? '<div class="queue-badge next">SIGUIENTE</div>' : '<div class="queue-badge waiting">En espera</div>';
-    div.innerHTML = `
-      <div class="queue-pos">${i+1}</div>
+    function renderQueue() {
+      let el = document.getElementById('queueList');
+      if (!queue.length) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">👥</div><div>Cola vacía — agrega jugadores</div></div>';
+        return;
+      }
+      el.innerHTML = '';
+      queue.forEach((p, i) => {
+        let div = document.createElement('div');
+        div.className = 'queue-item slide-in';
+        let badge = i < teamSize() ? '<div class="queue-badge next">SIGUIENTE</div>' : '<div class="queue-badge waiting">En espera</div>';
+        div.innerHTML = `
+      <div class="queue-pos">${i + 1}</div>
       <div class="queue-name">${esc(p.name)}</div>
       ${badge}
       <button class="queue-del" onclick="removeFromQueue(${i})" title="Quitar">✕</button>
     `;
-    el.appendChild(div);
-  });
-}
+        el.appendChild(div);
+      });
+    }
 
-function renderHistory() {
-  let el = document.getElementById('historyList');
-  if (!history.length) {
-    el.innerHTML = '<div class="empty-state"><div style="font-size:1.5rem;margin-bottom:6px;">📋</div><div>Sin partidos aún</div></div>';
-    return;
-  }
-  el.innerHTML = '';
-  history.slice(0,10).forEach(h => {
-    let div = document.createElement('div');
-    div.className = 'history-item';
-    div.innerHTML = `
+    function renderHistory() {
+      let el = document.getElementById('historyList');
+      if (!history.length) {
+        el.innerHTML = '<div class="empty-state"><div style="font-size:1.5rem;margin-bottom:6px;">📋</div><div>Sin partidos aún</div></div>';
+        return;
+      }
+      el.innerHTML = '';
+      history.slice(0, 10).forEach(h => {
+        let div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
       <div class="h-badge">🏆 ${esc(h.score)}</div>
       <div class="h-text"><strong>${esc(h.winner)}</strong> ganó · perdió <strong>${esc(h.loser)}</strong></div>
     `;
-    el.appendChild(div);
-  });
-}
+        el.appendChild(div);
+      });
+    }
 
-function updateGameInfo() {
-  document.getElementById('setsNeeded').textContent = setsNeeded;
-  document.getElementById('gameInfoText').innerHTML =
-    `Primero en ganar <strong>${setsNeeded}</strong> set${setsNeeded>1?'s':''} · Cada set a <strong>11</strong> pts (ventaja 2)`;
-}
+    function updateGameInfo() {
+      document.getElementById('setsNeeded').textContent = setsNeeded;
+      document.getElementById('gameInfoText').innerHTML =
+        `Primero en ganar <strong>${setsNeeded}</strong> set${setsNeeded > 1 ? 's' : ''} · Cada set a <strong>${pointsPerSet}</strong> pts (ventaja 2)`;
+    }
 
-// ==================== ANIMATIONS ====================
-function animateScore(side) {
-  let id = side === 'left' ? 'scoreLeft' : 'scoreRight';
-  let el = document.getElementById(id);
-  el.classList.remove('score-pulse');
-  void el.offsetWidth;
-  el.classList.add('score-pulse');
-}
+    // ==================== ANIMATIONS ====================
+    function animateScore(side) {
+      let id = side === 'left' ? 'scoreLeft' : 'scoreRight';
+      let el = document.getElementById(id);
+      el.classList.remove('score-pulse');
+      void el.offsetWidth;
+      el.classList.add('score-pulse');
+    }
 
-// ==================== UTILS ====================
-function esc(s) {
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+    // ==================== UTILS ====================
+    function esc(s) {
+      return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
 
-function confirmReset() {
-  if (confirm('¿Reiniciar todo? Se perderán los datos actuales.')) {
-    queue = [];
-    currentLeft = null;
-    currentRight = null;
-    scoreLeft = 0; scoreRight = 0;
-    setsLeft = 0; setsRight = 0;
-    currentSet = 1;
-    history = [];
-    lastPoints = [];
-    document.getElementById('winnerOverlay').classList.remove('show');
-    renderAll();
-  }
-}
-</script>
+    function confirmReset() {
+      if (confirm('¿Reiniciar todo? Se perderán los datos actuales.')) {
+        queue = [];
+        currentLeft = null;
+        currentRight = null;
+        scoreLeft = 0; scoreRight = 0;
+        setsLeft = 0; setsRight = 0;
+        currentSet = 1;
+        history = [];
+        lastPoints = [];
+        document.getElementById('winnerOverlay').classList.remove('show');
+        renderAll();
+      }
+    }
+  </script>
 </body>
+
 </html>

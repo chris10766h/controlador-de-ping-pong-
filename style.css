@@ -529,6 +529,30 @@ header p { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
 }
 .slide-in { animation: slide-in 0.25s ease-out; }
 
+/* POINTS PER SET INPUT */
+.pts-input {
+  width: 72px;
+  height: 38px;
+  padding: 0 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s;
+  -moz-appearance: textfield;
+}
+.pts-input::-webkit-inner-spin-button,
+.pts-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.pts-input:focus {
+  border-color: rgba(0,212,255,0.5);
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+}
+
 /* RESET BTN */
 .reset-btn {
   padding: 8px 16px;
