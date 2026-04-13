@@ -544,7 +544,8 @@ header p { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
   text-align: center;
   outline: none;
   transition: all 0.2s;
-  -moz-appearance: textfield;
+  appearance: textfield;
+  -moz-appearance: textfield; /* fallback para Firefox antiguo */
 }
 .pts-input::-webkit-inner-spin-button,
 .pts-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
