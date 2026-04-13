@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏓 Ping Pong Score Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --green: #10b981;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --border: rgba(255,255,255,0.08);
+    --glow: 0 0 30px rgba(0,212,255,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(124,58,237,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,212,255,0.08) 0%, transparent 60%);
+  }
+
+  header {
+    text-align: center;
+    padding: 28px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  header h1 {
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, #00d4ff, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+  }
+  header p { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+
+  /* MODE SELECTOR */
+  .mode-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: var(--surface);
+    padding: 6px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+  }
+  .mode-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .mode-btn.active {
+    background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(124,58,237,0.2));
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px rgba(0,212,255,0.3);
+  }
+
+  /* SETS SELECTOR */
+  .sets-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .sets-bar label { color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; }
+  .sets-btns { display: flex; gap: 6px; }
+  .set-btn {
+    width: 38px; height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .set-btn.active {
+    background: linear-gradient(135deg, #00d4ff, #7c3aed);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 0 12px rgba(0,212,255,0.3);
+  }
+
+  /* SCOREBOARD */
+  .scoreboard {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .player-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px 16px;
+    text-align: center;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .player-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .player-card.left::before { background: linear-gradient(90deg, #00d4ff, transparent); }
+  .player-card.right::before { background: linear-gradient(270deg, #7c3aed, transparent); }
+  .player-card.winner-glow { box-shadow: 0 0 30px rgba(16,185,129,0.3); border-color: rgba(16,185,129,0.4); }
+  .player-card.deuce-glow { box-shadow: 0 0 20px rgba(245,158,11,0.25); border-color: rgba(245,158,11,0.3); }
+
+  .team-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .player-card.left .team-label { color: var(--accent); }
+  .player-card.right .team-label { color: var(--accent2); }
+
+  .player-names {
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    font-weight: 700;
+    margin-bottom: 16px;
+    min-height: 2.4em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+  .player-names .name-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.05);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+  }
+
+  .score-display {
+    font-size: clamp(3.5rem, 12vw, 5rem);
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  .player-card.left .score-display { color: var(--accent); }
+  .player-card.right .score-display { color: var(--accent2); }
+
+  .point-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+  .player-card.left .point-btn {
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.05));
+    color: var(--accent);
+    border: 1px solid rgba(0,212,255,0.3);
+  }
+  .player-card.left .point-btn:hover {
+    background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(0,212,255,0.1));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,212,255,0.2);
+  }
+  .player-card.right .point-btn {
+    background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(124,58,237,0.05));
+    color: var(--accent2);
+    border: 1px solid rgba(124,58,237,0.3);
+  }
+  .player-card.right .point-btn:hover {
+    background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(124,58,237,0.1));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(124,58,237,0.2);
+  }
+  .point-btn:active { transform: scale(0.97) !important; }
+  .point-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+  /* MIDDLE SECTION */
+  .middle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .vs-badge {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--text-muted);
+    background: var(--surface2);
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border);
+  }
+  .status-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .status-pill.playing { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .status-pill.deuce { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+
+  .sets-display {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .set-pip {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: transparent;
+  }
+  .set-pip.left { background: var(--accent); border-color: var(--accent); }
+  .set-pip.right { background: var(--accent2); border-color: var(--accent2); }
+
+  /* UNDO BTN */
+  .undo-btn {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .undo-btn:hover { color: var(--amber); border-color: rgba(245,158,11,0.4); }
+
+  /* GAME STATUS BAR */
+  .game-status {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .game-status .info { font-size: 0.85rem; color: var(--text-muted); }
+  .game-status .info strong { color: var(--text); }
+  .game-status .current-set {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(0,212,255,0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,212,255,0.2);
+  }
+
+  /* WINNER MODAL */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .overlay.show { opacity: 1; pointer-events: all; }
+
+  .winner-modal {
+    background: var(--surface);
+    border: 1px solid rgba(16,185,129,0.4);
+    border-radius: 24px;
+    padding: 36px 32px;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 0 60px rgba(16,185,129,0.2);
+    transform: scale(0.9);
+    transition: transform 0.3s;
+  }
+  .overlay.show .winner-modal { transform: scale(1); }
+
+  .winner-modal .trophy { font-size: 4rem; margin-bottom: 12px; }
+  .winner-modal h2 { font-size: 1.8rem; font-weight: 900; color: var(--green); margin-bottom: 8px; }
+  .winner-modal .winner-name { font-size: 1.3rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .winner-modal .score-line { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 24px; }
+
+  .modal-actions { display: flex; gap: 10px; flex-direction: column; }
+  .btn-primary {
+    padding: 14px 20px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16,185,129,0.3); }
+  .btn-secondary {
+    padding: 12px 20px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+  /* QUEUE */
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: ''; flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .queue-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .queue-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .queue-item:hover { border-color: rgba(255,255,255,0.15); }
+
+  .queue-pos {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(124,58,237,0.15));
+    border: 1px solid rgba(0,212,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .queue-name { font-size: 0.95rem; font-weight: 600; flex: 1; }
+  .queue-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .queue-badge.next { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+  .queue-badge.waiting { background: rgba(148,163,184,0.1); color: var(--text-muted); border: 1px solid var(--border); }
+
+  .queue-del {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    opacity: 0;
+  }
+  .queue-item:hover .queue-del { opacity: 1; }
+  .queue-del:hover { color: var(--red); }
+
+  /* ADD PLAYER */
+  .add-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .add-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .player-input {
+    flex: 1;
+    min-width: 160px;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .player-input:focus { border-color: rgba(0,212,255,0.4); box-shadow: 0 0 0 3px rgba(0,212,255,0.08); }
+  .player-input::placeholder { color: var(--text-muted); }
+
+  .add-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(124,58,237,0.2));
+    color: var(--text);
+    border: 1px solid rgba(0,212,255,0.3);
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .add-btn:hover { background: linear-gradient(135deg, rgba(0,212,255,0.35), rgba(124,58,237,0.35)); transform: translateY(-1px); }
+
+  /* HISTORY */
+  .history-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .history-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border-radius: 10px;
+    font-size: 0.82rem;
+  }
+  .history-item .h-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(16,185,129,0.1);
+    color: var(--green);
+    border: 1px solid rgba(16,185,129,0.2);
+    white-space: nowrap;
+  }
+  .history-item .h-text { color: var(--text-muted); }
+  .history-item .h-text strong { color: var(--text); }
+
+  /* NO PLAYERS MSG */
+  .empty-state {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+  /* ANIMATION */
+  @keyframes pulse-score {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+  .score-pulse { animation: pulse-score 0.3s ease-out; }
+
+  @keyframes slide-in {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .slide-in { animation: slide-in 0.25s ease-out; }
+
+  /* RESET BTN */
+  .reset-btn {
+    padding: 8px 16px;
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 10px;
+    background: rgba(239,68,68,0.08);
+    color: var(--red);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .reset-btn:hover { background: rgba(239,68,68,0.15); }
+
+  .top-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+    gap: 8px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 480px) {
+    .scoreboard { grid-template-columns: 1fr auto 1fr; gap: 8px; }
+    .player-card { padding: 14px 10px; }
+    .score-display { font-size: 3rem; }
+    .add-form { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏓 Ping Pong Tracker</h1>
+  <p>Sistema de puntuación y cola de jugadores</p>
+</header>
+
+<div class="container">
+
+  <!-- MODE & SETS -->
+  <div class="mode-bar">
+    <button class="mode-btn active" id="modeSimples" onclick="setMode('simples')">Simples (1 vs 1)</button>
+    <button class="mode-btn" id="modeDuplas" onclick="setMode('duplas')">Duplas (2 vs 2)</button>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:20px;">
+    <div class="sets-bar" style="margin-bottom:0;">
+      <label>Sets a jugar:</label>
+      <div class="sets-btns">
+        <button class="set-btn" id="sb1" onclick="setMaxSets(1)">1</button>
+        <button class="set-btn active" id="sb3" onclick="setMaxSets(3)">3</button>
+        <button class="set-btn" id="sb5" onclick="setMaxSets(5)">5</button>
+      </div>
+    </div>
+    <div style="flex:1;"></div>
+    <button class="reset-btn" onclick="confirmReset()">↺ Reiniciar todo</button>
+  </div>
+
+  <!-- SCOREBOARD -->
+  <div class="game-status">
+    <div class="info" id="gameInfoText">Primero en ganar <strong id="setsNeeded">2</strong> sets gana el partido</div>
+    <div class="current-set" id="currentSetLabel">SET 1</div>
+  </div>
+
+  <div class="scoreboard" id="scoreboard">
+    <!-- LEFT CARD -->
+    <div class="player-card left" id="cardLeft">
+      <div class="team-label" id="labelLeft">JUGADOR 1</div>
+      <div class="player-names" id="namesLeft">
+        <span class="name-badge" id="name1A">—</span>
+        <span class="name-badge" id="name1B" style="display:none"></span>
+      </div>
+      <div class="score-display" id="scoreLeft">0</div>
+      <div style="margin-bottom:10px; display:flex; gap:4px; justify-content:center;" id="setsLeftPips"></div>
+      <button class="point-btn" id="btnLeft" onclick="addPoint('left')">+ PUNTO</button>
+    </div>
+
+    <!-- MIDDLE -->
+    <div class="middle">
+      <div class="vs-badge">VS</div>
+      <div class="status-pill playing" id="matchStatus">JUGANDO</div>
+      <button class="undo-btn" onclick="undoPoint()" title="Deshacer último punto">↩</button>
+    </div>
+
+    <!-- RIGHT CARD -->
+    <div class="player-card right" id="cardRight">
+      <div class="team-label" id="labelRight">JUGADOR 2</div>
+      <div class="player-names" id="namesRight">
+        <span class="name-badge" id="name2A">—</span>
+        <span class="name-badge" id="name2B" style="display:none"></span>
+      </div>
+      <div class="score-display" id="scoreRight">0</div>
+      <div style="margin-bottom:10px; display:flex; gap:4px; justify-content:center;" id="setsRightPips"></div>
+      <button class="point-btn" id="btnRight" onclick="addPoint('right')">+ PUNTO</button>
+    </div>
+  </div>
+
+  <!-- QUEUE -->
+  <div class="queue-section">
+    <div class="section-title">Cola de jugadores</div>
+    <div class="queue-list" id="queueList">
+      <div class="empty-state"><div class="icon">👥</div><div>Agrega jugadores para comenzar</div></div>
+    </div>
+  </div>
+
+  <!-- ADD PLAYER -->
+  <div class="add-section">
+    <div class="section-title">Agregar jugador</div>
+    <div class="add-form" id="addForm">
+      <input class="player-input" id="inputName" placeholder="Nombre del jugador" maxlength="20" onkeydown="if(event.key==='Enter')addPlayer()">
+      <button class="add-btn" onclick="addPlayer()">＋ Agregar</button>
+    </div>
+    <div id="dupFormHint" style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;display:none;">
+      💡 En modo duplas, los jugadores se emparejan automáticamente de 2 en 2
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-section">
+    <div class="section-title">Historial de partidos</div>
+    <div class="history-list" id="historyList">
+      <div class="empty-state"><div style="font-size:1.5rem;margin-bottom:6px;">📋</div><div>Sin partidos aún</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- WINNER MODAL -->
+<div class="overlay" id="winnerOverlay">
+  <div class="winner-modal">
+    <div class="trophy">🏆</div>
+    <h2>¡GANADOR!</h2>
+    <div class="winner-name" id="winnerName"></div>
+    <div class="score-line" id="winnerScore"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="nextMatch()">▶ Siguiente partido</button>
+      <button class="btn-secondary" onclick="closeModal()">✕ Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+let mode = 'simples'; // 'simples' | 'duplas'
+let maxSets = 3;
+let setsNeeded = 2; // Math.ceil(maxSets/2)
+
+let queue = []; // [{name}]
+let currentLeft = null;  // {names:[]} for simples: 1 name, duplas: 2 names
+let currentRight = null;
+
+let scoreLeft = 0;
+let scoreRight = 0;
+let setsLeft = 0;
+let setsRight = 0;
+let currentSet = 1;
+
+let history = []; // match results
+
+let lastPoints = []; // for undo: {side, scoreL, scoreR}
+
+// ==================== INIT ====================
+window.onload = () => {
+  // Demo players
+  let demo = ['Julio','Carlos','Ana','Pedro'];
+  demo.forEach(n => queue.push({name: n}));
+  tryStartMatch();
+  renderAll();
+};
+
+// ==================== MODE & SETS ====================
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeSimples').classList.toggle('active', m==='simples');
+  document.getElementById('modeDuplas').classList.toggle('active', m==='duplas');
+  document.getElementById('dupFormHint').style.display = m==='duplas' ? 'block' : 'none';
+  document.getElementById('labelLeft').textContent = m==='duplas' ? 'EQUIPO 1' : 'JUGADOR 1';
+  document.getElementById('labelRight').textContent = m==='duplas' ? 'EQUIPO 2' : 'JUGADOR 2';
+
+  // Reset match with current queue
+  resetCurrentMatch();
+  tryStartMatch();
+  renderAll();
+}
+
+function setMaxSets(n) {
+  maxSets = n;
+  setsNeeded = Math.ceil(n / 2);
+  [1,3,5].forEach(v => {
+    let btn = document.getElementById('sb'+v);
+    if(btn) btn.classList.toggle('active', v===n);
+  });
+  resetCurrentMatch();
+  renderAll();
+}
+
+// ==================== QUEUE & MATCH ====================
+function playersNeeded() { return mode === 'duplas' ? 4 : 2; }
+function teamSize() { return mode === 'duplas' ? 2 : 1; }
+
+function tryStartMatch() {
+  const needed = playersNeeded();
+  if (queue.length >= needed && (currentLeft === null || currentRight === null)) {
+    let ts = teamSize();
+    // Take from queue
+    let left = queue.splice(0, ts).map(p => p.name);
+    let right = queue.splice(0, ts).map(p => p.name);
+    currentLeft = { names: left };
+    currentRight = { names: right };
+    scoreLeft = 0;
+    scoreRight = 0;
+    setsLeft = 0;
+    setsRight = 0;
+    currentSet = 1;
+    lastPoints = [];
+  }
+}
+
+function resetCurrentMatch() {
+  if (currentLeft) queue.unshift(...currentLeft.names.map(n => ({name:n})));
+  if (currentRight) queue.unshift(...currentRight.names.map(n => ({name:n})));
+  currentLeft = null;
+  currentRight = null;
+  scoreLeft = 0;
+  scoreRight = 0;
+  setsLeft = 0;
+  setsRight = 0;
+  currentSet = 1;
+  lastPoints = [];
+}
+
+// ==================== SCORING ====================
+function addPoint(side) {
+  if (!currentLeft || !currentRight) return;
+
+  // Save state for undo
+  lastPoints.push({side, sl: scoreLeft, sr: scoreRight});
+  if (lastPoints.length > 20) lastPoints.shift();
+
+  if (side === 'left') scoreLeft++;
+  else scoreRight++;
+
+  animateScore(side);
+  checkSetWin();
+  renderAll();
+}
+
+function undoPoint() {
+  if (!lastPoints.length) return;
+  let prev = lastPoints.pop();
+  scoreLeft = prev.sl;
+  scoreRight = prev.sr;
+  renderAll();
+}
+
+function checkSetWin() {
+  const minPoints = 11;
+  const diff = 2;
+
+  let leftWins = scoreLeft >= minPoints && (scoreLeft - scoreRight) >= diff;
+  let rightWins = scoreRight >= minPoints && (scoreRight - scoreLeft) >= diff;
+
+  if (!leftWins && !rightWins) {
+    updateStatusPill();
+    return;
+  }
+
+  if (leftWins) {
+    setsLeft++;
+  } else {
+    setsRight++;
+  }
+
+  if (setsLeft >= setsNeeded || setsRight >= setsNeeded) {
+    // Match winner
+    setTimeout(() => showWinner(setsLeft > setsRight ? 'left' : 'right'), 200);
+  } else {
+    // Next set
+    currentSet++;
+    scoreLeft = 0;
+    scoreRight = 0;
+    lastPoints = [];
+    // Detect deuce-like
+  }
+}
+
+function updateStatusPill() {
+  let el = document.getElementById('matchStatus');
+  let isDeuce = scoreLeft >= 10 && scoreRight >= 10;
+  el.textContent = isDeuce ? 'DEUCE' : 'JUGANDO';
+  el.className = 'status-pill ' + (isDeuce ? 'deuce' : 'playing');
+  document.getElementById('cardLeft').classList.toggle('deuce-glow', isDeuce);
+  document.getElementById('cardRight').classList.toggle('deuce-glow', isDeuce);
+}
+
+function showWinner(side) {
+  let winner = side === 'left' ? currentLeft : currentRight;
+  let loser = side === 'left' ? currentRight : currentLeft;
+  let wScore = side === 'left' ? setsLeft : setsRight;
+  let lScore = side === 'left' ? setsRight : setsLeft;
+
+  // Save history
+  history.unshift({
+    winner: winner.names.join(' & '),
+    loser: loser.names.join(' & '),
+    score: wScore + '-' + lScore,
+    sets: maxSets,
+    mode
+  });
+
+  document.getElementById('winnerName').textContent = winner.names.join(' & ');
+  document.getElementById('winnerScore').textContent =
+    `Ganó ${wScore}-${lScore} en sets (${mode === 'duplas' ? 'Duplas' : 'Simples'}, al mejor de ${maxSets})`;
+
+  document.getElementById('winnerOverlay').classList.add('show');
+
+  // Winner stays, loser goes to end of queue
+  loser.names.forEach(n => queue.push({name: n}));
+
+  // Winner re-enters as currentLeft or Right after modal
+  window._pendingWinner = winner;
+  window._pendingLoser = loser;
+  window._winningSide = side;
+
+  renderHistory();
+}
+
+function nextMatch() {
+  closeModal();
+  // Winner becomes new left/right, opponent from queue comes in
+  let winner = window._pendingWinner;
+  let ts = teamSize();
+
+  if (queue.length >= ts) {
+    let newTeam = queue.splice(0, ts).map(p => p.name);
+    currentLeft = winner;
+    currentRight = { names: newTeam };
+  } else {
+    currentLeft = null;
+    currentRight = null;
+  }
+
+  scoreLeft = 0;
+  scoreRight = 0;
+  setsLeft = 0;
+  setsRight = 0;
+  currentSet = 1;
+  lastPoints = [];
+
+  if (!currentLeft && !currentRight) tryStartMatch();
+
+  renderAll();
+}
+
+function closeModal() {
+  document.getElementById('winnerOverlay').classList.remove('show');
+}
+
+// ==================== PLAYERS ====================
+function addPlayer() {
+  let input = document.getElementById('inputName');
+  let name = (input.value || '').trim();
+  if (!name) { input.focus(); return; }
+
+  queue.push({ name });
+  input.value = '';
+  input.focus();
+
+  if (!currentLeft || !currentRight) tryStartMatch();
+
+  renderAll();
+}
+
+function removeFromQueue(idx) {
+  queue.splice(idx, 1);
+  renderAll();
+}
+
+// ==================== RENDER ====================
+function renderAll() {
+  renderScoreboard();
+  renderQueue();
+  renderHistory();
+  updateStatusPill();
+  renderSetsPips();
+  updateGameInfo();
+}
+
+function renderScoreboard() {
+  let hasMatch = currentLeft && currentRight;
+
+  // Names
+  let [n1a, n1b] = (currentLeft?.names || ['—','']);
+  let [n2a, n2b] = (currentRight?.names || ['—','']);
+  document.getElementById('name1A').textContent = n1a || '—';
+  document.getElementById('name1B').textContent = n1b || '';
+  document.getElementById('name1B').style.display = (n1b && mode==='duplas') ? 'inline-block' : 'none';
+  document.getElementById('name2A').textContent = n2a || '—';
+  document.getElementById('name2B').textContent = n2b || '';
+  document.getElementById('name2B').style.display = (n2b && mode==='duplas') ? 'inline-block' : 'none';
+
+  // Scores
+  document.getElementById('scoreLeft').textContent = scoreLeft;
+  document.getElementById('scoreRight').textContent = scoreRight;
+
+  // Disable buttons if no match
+  document.getElementById('btnLeft').disabled = !hasMatch;
+  document.getElementById('btnRight').disabled = !hasMatch;
+
+  // Current set
+  document.getElementById('currentSetLabel').textContent = 'SET ' + currentSet;
+}
+
+function renderSetsPips() {
+  renderPips('setsLeftPips', setsLeft, setsRight);
+  renderPips('setsRightPips', setsRight, setsLeft);
+}
+
+function renderPips(containerId, wonByMe, wonByOpp) {
+  let el = document.getElementById(containerId);
+  el.innerHTML = '';
+  for (let i = 0; i < setsNeeded; i++) {
+    let pip = document.createElement('div');
+    pip.className = 'set-pip';
+    if (containerId === 'setsLeftPips' && i < wonByMe) pip.classList.add('left');
+    else if (containerId === 'setsRightPips' && i < wonByMe) pip.classList.add('right');
+    el.appendChild(pip);
+  }
+}
+
+function renderQueue() {
+  let el = document.getElementById('queueList');
+  if (!queue.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">👥</div><div>Cola vacía — agrega jugadores</div></div>';
+    return;
+  }
+  el.innerHTML = '';
+  queue.forEach((p, i) => {
+    let div = document.createElement('div');
+    div.className = 'queue-item slide-in';
+    let badge = i < teamSize() ? '<div class="queue-badge next">SIGUIENTE</div>' : '<div class="queue-badge waiting">En espera</div>';
+    div.innerHTML = `
+      <div class="queue-pos">${i+1}</div>
+      <div class="queue-name">${esc(p.name)}</div>
+      ${badge}
+      <button class="queue-del" onclick="removeFromQueue(${i})" title="Quitar">✕</button>
+    `;
+    el.appendChild(div);
+  });
+}
+
+function renderHistory() {
+  let el = document.getElementById('historyList');
+  if (!history.length) {
+    el.innerHTML = '<div class="empty-state"><div style="font-size:1.5rem;margin-bottom:6px;">📋</div><div>Sin partidos aún</div></div>';
+    return;
+  }
+  el.innerHTML = '';
+  history.slice(0,10).forEach(h => {
+    let div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `
+      <div class="h-badge">🏆 ${esc(h.score)}</div>
+      <div class="h-text"><strong>${esc(h.winner)}</strong> ganó · perdió <strong>${esc(h.loser)}</strong></div>
+    `;
+    el.appendChild(div);
+  });
+}
+
+function updateGameInfo() {
+  document.getElementById('setsNeeded').textContent = setsNeeded;
+  document.getElementById('gameInfoText').innerHTML =
+    `Primero en ganar <strong>${setsNeeded}</strong> set${setsNeeded>1?'s':''} · Cada set a <strong>11</strong> pts (ventaja 2)`;
+}
+
+// ==================== ANIMATIONS ====================
+function animateScore(side) {
+  let id = side === 'left' ? 'scoreLeft' : 'scoreRight';
+  let el = document.getElementById(id);
+  el.classList.remove('score-pulse');
+  void el.offsetWidth;
+  el.classList.add('score-pulse');
+}
+
+// ==================== UTILS ====================
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function confirmReset() {
+  if (confirm('¿Reiniciar todo? Se perderán los datos actuales.')) {
+    queue = [];
+    currentLeft = null;
+    currentRight = null;
+    scoreLeft = 0; scoreRight = 0;
+    setsLeft = 0; setsRight = 0;
+    currentSet = 1;
+    history = [];
+    lastPoints = [];
+    document.getElementById('winnerOverlay').classList.remove('show');
+    renderAll();
+  }
+}
+</script>
+</body>
+</html>
